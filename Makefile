@@ -6,22 +6,28 @@ clean:
 
 CC = mpicxx
 
-FLAGS = -Wall 
+BUILD_DIR = ./build
+BIN_DIR = ./bin
+SRC_DIR = ./src
+OBJS = main.o matrix.o utils.o sbc_matrix.o init_functions.o
 
-a.out: main.o matrix.o utils.o sbc_matrix.o init_functions.o
-	$(CC) $(FLAGS) sbc_matrix.o main.o matrix.o utils.o  init_functions.o -o a.out
+FLAGS = -Wall -O3 --fast-math 
 
-main.o: main.cpp
-	$(CC) $(FLAGS) -c main.cpp
+a.out: $(OBJS)
+	cd $(BUILD_DIR); $(CC) $(FLAGS) sbc_matrix.o main.o matrix.o utils.o  init_functions.o -o ../$(BIN_DIR)/a.out
 
-matrix.o: matrix.cpp
-	$(CC) $(FLAGS) -c matrix.cpp
+main.o: $(SRC_DIR)/main.cpp
+	$(CC) $(FLAGS) -c  $(SRC_DIR)/main.cpp -o $(BUILD_DIR)/main.o
 
-utils.o: utils.cpp
-	$(CC) $(FLAGS) -c utils.cpp
+matrix.o: $(SRC_DIR)/matrix.cpp
+	$(CC) $(FLAGS) -c  $(SRC_DIR)/matrix.cpp -o $(BUILD_DIR)/matrix.o
 
-sbc_matrix.o: sbc_matrix.cpp
-	$(CC) $(FLAGS) -c sbc_matrix.cpp
+utils.o: $(SRC_DIR)/utils.cpp
+	$(CC) $(FLAGS) -c  $(SRC_DIR)/utils.cpp -o $(BUILD_DIR)/utils.o
 
-init_functions.o: init_functions.cpp
-	$(CC) $(FLAGS) -c init_functions.cpp
+sbc_matrix.o: $(SRC_DIR)/sbc_matrix.cpp
+	$(CC) $(FLAGS) -c  $(SRC_DIR)/sbc_matrix.cpp -o $(BUILD_DIR)/sbc_matrix.o
+
+init_functions.o: $(SRC_DIR)/init_functions.cpp
+	$(CC) $(FLAGS) -c $(SRC_DIR)/init_functions.cpp -o $(BUILD_DIR)/init_functions.o
+

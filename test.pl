@@ -1,10 +1,12 @@
 #!/usr/bin/perl
 
+open ($fh, ">", "logs/log") or die $!;
+
 for my $p (1..5) {
   for my $n (500) {
     for my $m (1..30) {
-      print $p . ' ' . $n . ' ' . $m . "\n";
-      system ("mpirun -n $p ./app_exec $n $m");
+      print $fh $p . ' ' . $n . ' ' . $m . "\n";
+      system ("mpirun -n $p ./bin/a.out $n $m");
     }
   }
 }
