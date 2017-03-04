@@ -11,7 +11,7 @@ BIN_DIR = ./bin
 SRC_DIR = ./src
 OBJS = main.o matrix.o utils.o sbc_matrix.o init_functions.o
 
-FLAGS = -Wall -O3 --fast-math
+FLAGS = -Wall -O3 --fast-math -fsanitize=address
 
 a.out: $(OBJS)
 	cd $(BUILD_DIR); $(CC) $(FLAGS) sbc_matrix.o main.o matrix.o utils.o  init_functions.o -o ../$(BIN_DIR)/a.out
