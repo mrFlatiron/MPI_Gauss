@@ -1,12 +1,13 @@
+#include "mpi.h"
 #include "../include/utils.h"
 #include "../include/matrix.h"
 #include "../include/sbc_matrix.h"
 #include "../include/init_functions.h"
 #include "../include/const.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
+
+#include <stdio.h>
 
 int main (int argc, char *argv[])
 {
@@ -104,7 +105,7 @@ int main (int argc, char *argv[])
                   glob_matrix, 
                   argv[3]);
   else
-    SBC_init (&loc_storage, n, m, p, rank, abs_i_minus_j); 
+    SBC_init (&loc_storage, n, m, p, rank, I); 
 
   b = loc_storage.b;
 
@@ -133,8 +134,11 @@ int main (int argc, char *argv[])
       return 0;
     }
 
+  fflush (stdout);
+
   if (rank == 0)
     printf ("=================================BEGIN RESOLVING===================================\n");
+
 
   SBC_MPI_print (&loc_storage, glob_matrix, buf_print, MPI_COMM_WORLD);
 
@@ -154,6 +158,8 @@ int main (int argc, char *argv[])
                                 buf_,
                                 int_buf
                                ); // all_reduce 
+
+ SBC_MPI_print (&loc_storage, glob_matrix, buf_print, MPI_COMM_WORLD);
 
       if (glob_pivot == -1)
         {
@@ -197,11 +203,11 @@ int main (int argc, char *argv[])
                                &loc_storage,
                                i_main,
                                MPI_COMM_WORLD,
-                               buf_,
-                               int_buf
+                               buf_
                               );  //bcast
 
     }
+  
 
   SBC_gauss_MPI_multi_row (
                            &loc_storage,
@@ -220,6 +226,7 @@ int main (int argc, char *argv[])
                             buf_
                            ); //send
 
+
   if (rank == 0)
     {
       for (int i = l - 1; i >= 0; i--)
@@ -233,7 +240,10 @@ int main (int argc, char *argv[])
     printf ("=================================FINISHED RESOLVING================================\n");
 
 
-  SBC_fill_in (&loc_storage, abs_i_minus_j);
+  if (argc < 4)
+    SBC_fill_in (&loc_storage, I);
+  else 
+    SBC_MPI_fill_in (&loc_storage, MPI_COMM_WORLD, glob_matrix, argv[3]);
 
   SBC_MPI_multi_vector (&loc_storage, x, b_save, MPI_COMM_WORLD, buf_);
 
@@ -242,16 +252,16 @@ int main (int argc, char *argv[])
       matrix_subtr_rw (x, b_untouchable, n, 1);
       double norm = 
        matrix_norm (x, n, 1 );
-      printf ("discrepancy = %le\n", norm);
+      printf ("discrepancy = %e\n", norm);
     }
   double loc_end = MPI_Wtime ();
   MPI_Barrier (MPI_COMM_WORLD);
   double glob_end = MPI_Wtime ();
 
   if (rank == 0)
-    printf ("GLOB WTIME = %lf sec\n", glob_end - start);
+    printf ("GLOB WTIME = %f sec\n", glob_end - start);
 
-  printf ("RANK %d WTIME = %lf sec\n", rank, loc_end - start);
+  printf ("RANK %d WTIME = %f sec\n", rank, loc_end - start);
 
   delete[] buf_;
   delete[] x;

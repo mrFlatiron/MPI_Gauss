@@ -32,6 +32,8 @@ void SBC_pivot_reduce (
                        MPI_Datatype *SBC_pivot_candidate
                       )
 {
+  (void)len;
+  (void)SBC_pivot_candidate;
   if (in->glob_pivot_index >= 0)
     {
       if (inout->glob_pivot_index < 0 || inout->norm_of_rev > in->norm_of_rev)
@@ -175,6 +177,7 @@ void SBC_MPI_init (
   int l = n / m;
   int s = n - m * l; 
   double *loc_matrix = loc_storage->loc_matrix;
+  double *b = loc_storage->b;
   int number_of_m_cols = loc_storage->number_of_m_cols;
   int has_s_col = loc_storage->has_s_col;
 
@@ -227,6 +230,17 @@ void SBC_MPI_init (
         MPI_Recv (to_recv, ns, MPI_DOUBLE, 0, 0, comm, &st);
     }
 
+  if (b)
+    {
+      for (int glob_i = 0; glob_i < n; glob_i ++)
+        {
+          b[glob_i] = 0;
+          for (int glob_j = 0; glob_j < n; glob_j ++)
+            b[glob_i] += (glob_j & 1) ? glob_matrix[_get_ij_index (glob_i, glob_j, n, m)] : 0;
+        }
+    }
+
+
   loc_storage->state = SBC_STORAGE_INITIALIZED;
 }
 
@@ -238,7 +252,7 @@ void SBC_fill_in (
 {
   if (loc_storage->state < SBC_STORAGE_ALLOCATED)
     {
-      printf ("[ERROR}: wrong use of SBC_fill_in\n");
+      printf ("[ERROR]: wrong use of SBC_fill_in\n");
       return;
     }
   int rank = loc_storage->rank;
@@ -324,6 +338,83 @@ void SBC_fill_in (
         }
     }
 }
+
+void SBC_MPI_fill_in (
+                   SBC_storage *loc_storage,
+                   MPI_Comm comm,
+                   double *glob_matrix,
+                   const char *file
+                   )
+{
+  if (loc_storage->state < SBC_STORAGE_ALLOCATED)
+    {
+      printf ("[ERROR]: wrong use of SBC_fill_in\n");
+      return;
+    }
+  int rank = loc_storage->rank;
+  int n = loc_storage->n;
+  int m = loc_storage->m;
+  int l = loc_storage->l;
+  int p = loc_storage->p;
+  int s = loc_storage->s;
+  int number_of_m_cols = loc_storage->number_of_m_cols;
+  int has_s_col = loc_storage->has_s_col;
+  double *loc_matrix = loc_storage->loc_matrix;
+
+  int nm = n * m;
+  int ns = s * n;
+
+  int dest;
+
+  double *to_send = glob_matrix;
+  double *to_recv = loc_matrix;
+
+
+
+  if (rank == 0)
+    {
+      int error = matrix_read_file (glob_matrix, n, m, file);
+      if (error)
+        {
+          loc_storage->state = SBC_STORAGE_ALLOCATED;
+          fprintf (stderr, "Error occured during reading the file. Code : %d\n", error);
+          return ;
+        }
+      for (int i = 0; i < l; i++)
+        {
+          dest = i % p;
+          if (dest == 0)
+            {
+              matrix_copy (to_send, to_recv, n, m); 
+              to_recv += nm;
+            }
+          else
+            MPI_Send (to_send, nm, MPI_DOUBLE, dest, 0, comm);
+          to_send += nm;
+        }
+      dest = l % p;
+      if (dest == 0)
+          matrix_copy (to_send, to_recv, n, s); 
+      else
+        MPI_Send (to_send, ns, MPI_DOUBLE, dest, 0, comm);
+      to_send += nm;
+    }
+  else 
+    {
+      MPI_Status st;
+      for (int i = 0; i < number_of_m_cols; i++)
+        {
+          MPI_Recv (to_recv, nm, MPI_DOUBLE, 0, 0, comm, &st);
+          to_recv += nm;
+        }
+      if (has_s_col)
+        MPI_Recv (to_recv, ns, MPI_DOUBLE, 0, 0, comm, &st);
+    }
+
+  loc_storage->state = SBC_STORAGE_INITIALIZED;
+
+}
+
 
 
 int SBC_index (const int i, const int j, const int n, const int m)
@@ -733,7 +824,12 @@ void SBC_gauss_MPI_find_pivot (
                                   permutation
                                  );
 
-  MPI_Allreduce (&pivot_candidate, &pivot, 1, SBC_pivot_candidate, SBC_pivot_op, MPI_COMM_WORLD);  
+  if (i_main == 3)
+    {
+      printf ("rank = %d, glob_pivot_index = %d\n", loc_storage->rank, pivot_candidate.glob_pivot_index);
+    }
+
+  MPI_Allreduce (&pivot_candidate, &pivot, 1, SBC_pivot_candidate, SBC_pivot_op, comm);  
   *glob_pivot = pivot.glob_pivot_index;
 }
 
@@ -741,8 +837,7 @@ void SBC_gauss_MPI_subtr_all (
                               SBC_storage *loc_storage,
                               const int i_main,
                               MPI_Comm comm,
-                              double *buf_,
-                              int *permutation
+                              double *buf_
                              )
 {
   int rank = loc_storage->rank;
