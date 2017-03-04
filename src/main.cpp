@@ -9,8 +9,13 @@
 
 #include <stdio.h>
 
+
 int main (int argc, char *argv[])
 {
+
+double (*init_function) (const int, const int, const int)
+ = I;
+
 
   int n;
   int m; 
@@ -19,8 +24,8 @@ int main (int argc, char *argv[])
   int rank;
   int glob_pivot;
 
-  SBC_storage  loc_storage;
-  MPI_Datatype SBC_pivot_candidate;
+
+  SBC_storage  loc_storage; MPI_Datatype SBC_pivot_candidate;
   MPI_Op       SBC_pivot_op;
 
 
@@ -105,7 +110,7 @@ int main (int argc, char *argv[])
                   glob_matrix, 
                   argv[3]);
   else
-    SBC_init (&loc_storage, n, m, p, rank, I); 
+    SBC_init (&loc_storage, n, m, p, rank, init_function); 
 
   b = loc_storage.b;
 
@@ -148,6 +153,9 @@ int main (int argc, char *argv[])
   for (int i_main = 0; i_main < l; i_main++)
     {
 
+      if (rank == 0)
+        printf ("iteration = %d\n", i_main);
+
       SBC_gauss_MPI_find_pivot (
                                 &loc_storage,
                                 i_main,
@@ -158,9 +166,6 @@ int main (int argc, char *argv[])
                                 buf_,
                                 int_buf
                                ); // all_reduce 
-
- SBC_MPI_print (&loc_storage, glob_matrix, buf_print, MPI_COMM_WORLD);
-
       if (glob_pivot == -1)
         {
           delete[] buf_;
@@ -190,7 +195,6 @@ int main (int argc, char *argv[])
                           i_main,
                           MPI_COMM_WORLD
                          );  //sendrecv_replace 
-
       SBC_gauss_MPI_multi_row (
                                &loc_storage,
                                i_main,
@@ -207,7 +211,7 @@ int main (int argc, char *argv[])
                               );  //bcast
 
     }
-  
+
 
   SBC_gauss_MPI_multi_row (
                            &loc_storage,
@@ -216,7 +220,6 @@ int main (int argc, char *argv[])
                            buf_,
                            int_buf
                           ); //send
-
 
   for (int i_main = l; i_main > 0; i_main --)
     SBC_gauss_MPI_backward (
@@ -241,7 +244,7 @@ int main (int argc, char *argv[])
 
 
   if (argc < 4)
-    SBC_fill_in (&loc_storage, I);
+    SBC_fill_in (&loc_storage, init_function);
   else 
     SBC_MPI_fill_in (&loc_storage, MPI_COMM_WORLD, glob_matrix, argv[3]);
 

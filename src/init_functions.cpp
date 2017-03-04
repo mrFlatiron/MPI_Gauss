@@ -40,3 +40,12 @@ double I (const int i, const int j, const int n)
   (void)n;
   return (i == j) ? 1 : 0;
 }
+
+double m1 (const int i, const int j, const int n)
+{
+  double ar[16] = {5, 7, 6, 5,
+                   7, 10, 8, 7,
+                   6, 8, 10, 9,
+                   5, 7, 9, 10};
+  return ar[j + i * n];
+}

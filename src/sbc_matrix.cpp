@@ -214,7 +214,7 @@ void SBC_MPI_init (
       dest = l % p;
       if (dest == 0)
           matrix_copy (to_send, to_recv, n, s); 
-      else
+      else if (s != 0)
         MPI_Send (to_send, ns, MPI_DOUBLE, dest, 0, comm);
       to_send += nm;
     }
@@ -784,6 +784,7 @@ void SBC_gauss_MPI_swap (
       swap_arrays (loc_matrix_pivot, loc_matrix_i_main, nm); 
       return ;
     }
+
   MPI_Status status;
 
   dest = rank_pivot + rank_i_main - rank;
@@ -793,11 +794,12 @@ void SBC_gauss_MPI_swap (
   loc_swap /= p;
 
   loc_matrix_swap = loc_matrix + nm * loc_swap;
-
+  
 
   MPI_Sendrecv_replace (loc_matrix_swap, nm, MPI_DOUBLE,
                         dest, 0, dest, 0,
                         comm,  &status);
+
   return ;
 }
 
@@ -824,10 +826,6 @@ void SBC_gauss_MPI_find_pivot (
                                   permutation
                                  );
 
-  if (i_main == 3)
-    {
-      printf ("rank = %d, glob_pivot_index = %d\n", loc_storage->rank, pivot_candidate.glob_pivot_index);
-    }
 
   MPI_Allreduce (&pivot_candidate, &pivot, 1, SBC_pivot_candidate, SBC_pivot_op, comm);  
   *glob_pivot = pivot.glob_pivot_index;
