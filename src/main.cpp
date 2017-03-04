@@ -14,7 +14,7 @@ int main (int argc, char *argv[])
 {
 
 double (*init_function) (const int, const int, const int)
- = I;
+ = abs_i_minus_j;
 
 
   int n;
@@ -71,7 +71,7 @@ double (*init_function) (const int, const int, const int)
 
   double *buf_              = new double[n * m + m * m];
   double *x                 = new double[n];
-  double *b_save            = new double[n];
+  double *b_new            = new double[n];
   double *b_untouchable     = new double[n];
   int *int_buf              = new int[m];
   int *permutation          = new int[n];
@@ -95,7 +95,7 @@ double (*init_function) (const int, const int, const int)
       !x ||
       !int_buf ||
       !permutation ||
-      !b_save ||
+      !b_new ||
       !b_untouchable ||
       (rank == 0 && !glob_matrix))
     {
@@ -139,8 +139,6 @@ double (*init_function) (const int, const int, const int)
       return 0;
     }
 
-  fflush (stdout);
-
   if (rank == 0)
     printf ("=================================BEGIN RESOLVING===================================\n");
 
@@ -168,23 +166,10 @@ double (*init_function) (const int, const int, const int)
                                ); // all_reduce 
       if (glob_pivot == -1)
         {
-          delete[] buf_;
-          delete[] x;
-          delete[] b_save;
-          delete[] b_untouchable;
-          delete[] int_buf;
-          delete[] permutation;
-          if (glob_matrix)
-            delete[] glob_matrix;
-          if (buf_print)
-            delete[] buf_print;
-          SBC_destroy (&loc_storage);
-
           if (rank == 0)
             fprintf (stderr, "[ERROR]: NO SOLUTION\n");
 
-          MPI_Finalize ();
-          return NO_SOLUTION;
+          MPI_Abort(MPI_COMM_WORLD, NO_SOLUTION);
         }
       else 
         permutation[i_main] = glob_pivot;
@@ -229,7 +214,6 @@ double (*init_function) (const int, const int, const int)
                             buf_
                            ); //send
 
-
   if (rank == 0)
     {
       for (int i = l - 1; i >= 0; i--)
@@ -238,7 +222,7 @@ double (*init_function) (const int, const int, const int)
 
       matrix_copy (b, x, n, 1);
     }
-
+//now x = the solution
   if (rank == 0)
     printf ("=================================FINISHED RESOLVING================================\n");
 
@@ -248,13 +232,13 @@ double (*init_function) (const int, const int, const int)
   else 
     SBC_MPI_fill_in (&loc_storage, MPI_COMM_WORLD, glob_matrix, argv[3]);
 
-  SBC_MPI_multi_vector (&loc_storage, x, b_save, MPI_COMM_WORLD, buf_);
+  SBC_MPI_multi_vector (&loc_storage, x, b_new, MPI_COMM_WORLD, buf_); // b_new = Ax
 
   if (rank == 0)
     {
-      matrix_subtr_rw (x, b_untouchable, n, 1);
+      matrix_subtr_rw (b_new, b_untouchable, n, 1);
       double norm = 
-       matrix_norm (x, n, 1 );
+       matrix_norm (b_new, n, 1 );
       printf ("discrepancy = %e\n", norm);
     }
   double loc_end = MPI_Wtime ();
@@ -268,7 +252,7 @@ double (*init_function) (const int, const int, const int)
 
   delete[] buf_;
   delete[] x;
-  delete[] b_save;
+  delete[] b_new;
   delete[] b_untouchable;
   delete[] int_buf;
   delete[] permutation;

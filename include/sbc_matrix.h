@@ -234,9 +234,9 @@ void SBC_gauss_MPI_backward (
 void SBC_MPI_multi_vector (
                            SBC_storage *loc_storage,
                            double *x,
-                           double *b_save,
+                           double *b_save, //out
                            MPI_Comm comm,
-                           double *buf //m * m size
+                           double *buf //m * m  + n size
                           );
 void SBC_destroy (
                   SBC_storage *loc_storage

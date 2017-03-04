@@ -1053,7 +1053,7 @@ void SBC_MPI_multi_vector (
                            double *x,
                            double *b_save,
                            MPI_Comm comm,
-                           double *buf
+                           double *buf_
                           )
 {
   int rank = loc_storage->rank;
@@ -1070,16 +1070,18 @@ void SBC_MPI_multi_vector (
   double *loc_matrix = loc_storage->loc_matrix;
   double *block = loc_matrix;
   double *x_iter = x + rank * m;
-  double *b_iter = b_save;
+  double *buf = buf_;
+  double *b_temp = buf + mm;
+  double *b_iter;
 
   MPI_Bcast (x, n, MPI_DOUBLE, 0, comm);
 
   for (int i = 0; i < n; i++)
-    b_save[i] = 0;
+    b_temp[i] = 0;
 
   for (int i = 0; i < number_of_m_cols; i++)
     {
-      b_iter = b_save;
+      b_iter = b_temp;
       for (int j = 0; j < l; j++)
         {
           matrix_product (block, x_iter, buf, m, m, 1); 
@@ -1101,7 +1103,7 @@ void SBC_MPI_multi_vector (
 
   if (has_s_col)
     {
-      b_iter = b_save;
+      b_iter = b_temp;
       for (int j = 0; j < l; j++)
         {
           matrix_product (block, x_iter, buf, m, s, 1); 
@@ -1118,11 +1120,7 @@ void SBC_MPI_multi_vector (
         b_iter[k] += buf[k];
     }
 
-  for (int i = 0; i < n; i++)
-    {
-      // printf ("[%d]: b_save[%d] = %lf\n", rank, i, b_save[i]);
-    }
-  MPI_Reduce (b_save, x, n, MPI_DOUBLE, MPI_SUM, 0, comm);
+  MPI_Reduce (b_temp, b_save, n, MPI_DOUBLE, MPI_SUM, 0, comm);
 }
 
 
