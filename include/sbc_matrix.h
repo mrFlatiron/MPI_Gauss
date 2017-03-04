@@ -1,7 +1,6 @@
 #pragma once
 
 #include "const.h"
-
 #include <mpi.h>
 #include <stdio.h>
 
@@ -116,6 +115,14 @@ void SBC_MPI_init (
                    const char *file
                   );
 
+void SBC_MPI_fill_in (
+                   SBC_storage *loc_storage,
+                   MPI_Comm comm,
+                   double *glob_matrix,
+                   const char *file
+                   );
+
+
 void SBC_simple_print (
                 double *glob_matrix,
                 const int n,
@@ -214,8 +221,7 @@ void SBC_gauss_MPI_subtr_all (
                               SBC_storage *loc_storage,
                               const int i_main,
                               MPI_Comm comm,
-                              double *buf_, // n * m + m * m size
-                              int *permutation
+                              double *buf_ // n * m + m * m size
                              );
 
 void SBC_gauss_MPI_backward (
