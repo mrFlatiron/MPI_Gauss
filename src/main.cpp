@@ -1,9 +1,9 @@
 #include "mpi.h"
-#include "../include/utils.h"
-#include "../include/matrix.h"
-#include "../include/sbc_matrix.h"
-#include "../include/init_functions.h"
-#include "../include/const.h"
+#include "utils.h"
+#include "matrix.h"
+#include "sbc_matrix.h"
+#include "init_functions.h"
+#include "const.h"
 
 #include <stdlib.h>
 

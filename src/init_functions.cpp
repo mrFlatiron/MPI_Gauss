@@ -1,5 +1,5 @@
 #include <math.h>
-#include "../include/init_functions.h"
+#include "init_functions.h"
 
 double gilbert (const int i, const int j, const int n)
 {

@@ -1,6 +1,6 @@
-#include "../include/matrix.h"
-#include "../include/const.h"
-#include "../include/utils.h"
+#include "matrix.h"
+#include "const.h"
+#include "utils.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,7 +1,7 @@
-#include "../include/sbc_matrix.h"
-#include "../include/matrix.h"
-#include "../include/utils.h"
-#include "../include/const.h"
+#include "sbc_matrix.h"
+#include "matrix.h"
+#include "utils.h"
+#include "const.h"
 #include <mpi.h>
 #include <stdlib.h>
 

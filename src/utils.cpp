@@ -1,4 +1,4 @@
-#include "../include/utils.h"
+#include "utils.h"
 
 void swap (double *a, const int i, const int j)
 {
