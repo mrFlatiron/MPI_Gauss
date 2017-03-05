@@ -14,15 +14,14 @@ int main (int argc, char *argv[])
 {
 
 double (*init_function) (const int, const int, const int)
- = abs_i_minus_j;
+ = m1;
 
 
   int n;
   int m; 
   int l;
   int p;
-  int rank;
-  int glob_pivot;
+  int rank; int glob_pivot;
 
 
   SBC_storage  loc_storage; MPI_Datatype SBC_pivot_candidate;
@@ -235,14 +234,16 @@ double (*init_function) (const int, const int, const int)
     SBC_MPI_fill_in (&loc_storage, MPI_COMM_WORLD, glob_matrix, argv[3]);
 
   SBC_MPI_multi_vector (&loc_storage, x, b_new, MPI_COMM_WORLD, buf_); // b_new = Ax
-
+  
   if (rank == 0)
     {
       matrix_subtr_rw (b_new, b_untouchable, n, 1);
       double norm =  matrix_norm (b_new, n, 1 );
       printf ("discrepancy = %e\n", norm);
       for (int i = 0; i < n; i++)
-        x[i] -= (i & 1) ? 1 : 0;
+        {
+          x[i] -= (i & 1) ? 1 : 0;
+        }
       printf ("error = %e\n", matrix_norm (x, n, 1)); 
 
 

@@ -236,7 +236,7 @@ void SBC_MPI_init (
         {
           b[glob_i] = 0;
           for (int glob_j = 0; glob_j < n; glob_j ++)
-            b[glob_i] += (glob_j & 1) ? glob_matrix[_get_ij_index (glob_i, glob_j, n, m)] : 0;
+            b[glob_i] += (glob_j & 1) ? glob_matrix[_get_ij_index (n, m, glob_i, glob_j)] : 0;
         }
     }
 
