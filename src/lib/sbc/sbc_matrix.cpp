@@ -827,6 +827,7 @@ void SBC_gauss_MPI_find_pivot (
                                  );
 
 
+
   MPI_Allreduce (&pivot_candidate, &pivot, 1, SBC_pivot_candidate, SBC_pivot_op, comm);  
   *glob_pivot = pivot.glob_pivot_index;
 }

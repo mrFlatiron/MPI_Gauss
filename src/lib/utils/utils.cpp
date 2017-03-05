@@ -11,8 +11,7 @@ void swap_arrays (double *a, double *b, const int n)
 {
   double buf[8];
   int i;
-  int k = n & 7;
-  for (i = 0; i < n - 8; i+= 8)
+  for (i = 0; i + 7 < n; i += 8)
     {
       buf[0] = a[i]; 
       buf[1] = a[i + 1]; 
@@ -39,7 +38,7 @@ void swap_arrays (double *a, double *b, const int n)
       b[i + 6] = buf[6];
       b[i + 7] = buf[7];
     }
-  for (i = n - k; i < n; i++)
+  for (; i < n; i++)
     {
       buf[0] = a[i];
       a[i] = b[i];

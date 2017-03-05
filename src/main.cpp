@@ -180,6 +180,8 @@ double (*init_function) (const int, const int, const int)
                           i_main,
                           MPI_COMM_WORLD
                          );  //sendrecv_replace 
+
+      
       SBC_gauss_MPI_multi_row (
                                &loc_storage,
                                i_main,
