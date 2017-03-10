@@ -13,10 +13,16 @@ FLAGS = -Wall -O3 --fast-math -fsanitize=address
 all: a.out
 
 clean:
-	@cd $(BUILD_DIR); rm -f *.o; cd ..;
-	@cd $(BIN_DIR); rm -f $(EXE);
-	@cd ..
+	cd $(BUILD_DIR); rm -f *.o; cd ..;
+	cd $(BIN_DIR); rm -f $(EXE);
+	cd ..
 
+sweep:
+	rm -rf *.o
+	rm -rf *~
+	rm -rf \.*~
+	rm -rf *.swp*
+	
 CC = mpicxx
 
 
