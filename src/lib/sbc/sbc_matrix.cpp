@@ -174,74 +174,13 @@ void SBC_MPI_init (
       return ;
     }
 
-  int l = n / m;
-  int s = n - m * l; 
-  double *loc_matrix = loc_storage->loc_matrix;
-  double *b = loc_storage->b;
-  int number_of_m_cols = loc_storage->number_of_m_cols;
-  int has_s_col = loc_storage->has_s_col;
+  SBC_MPI_fill_in (
+                   loc_storage,
+                   comm,
+                   glob_matrix,
+                   file
+                  );
 
-  int nm = n * m;
-  int ns = s * n;
-
-  int dest;
-
-  double *to_send = glob_matrix;
-  double *to_recv = loc_matrix;
-
-
-  if (rank == 0)
-    {
-      int error = matrix_read_file (glob_matrix, n, m, file);
-      if (error)
-        {
-          loc_storage->state = SBC_STORAGE_ALLOCATED;
-          fprintf (stderr, "Error occured during reading the file. Code : %d\n", error);
-          return ;
-        }
-      for (int i = 0; i < l; i++)
-        {
-          dest = i % p;
-          if (dest == 0)
-            {
-              matrix_copy (to_send, to_recv, n, m); 
-              to_recv += nm;
-            }
-          else
-            MPI_Send (to_send, nm, MPI_DOUBLE, dest, 0, comm);
-          to_send += nm;
-        }
-      dest = l % p;
-      if (dest == 0)
-          matrix_copy (to_send, to_recv, n, s); 
-      else if (s != 0)
-        MPI_Send (to_send, ns, MPI_DOUBLE, dest, 0, comm);
-      to_send += nm;
-    }
-  else 
-    {
-      MPI_Status st;
-      for (int i = 0; i < number_of_m_cols; i++)
-        {
-          MPI_Recv (to_recv, nm, MPI_DOUBLE, 0, 0, comm, &st);
-          to_recv += nm;
-        }
-      if (has_s_col)
-        MPI_Recv (to_recv, ns, MPI_DOUBLE, 0, 0, comm, &st);
-    }
-
-  if (b)
-    {
-      for (int glob_i = 0; glob_i < n; glob_i ++)
-        {
-          b[glob_i] = 0;
-          for (int glob_j = 0; glob_j < n; glob_j ++)
-            b[glob_i] += (glob_j & 1) ? glob_matrix[_get_ij_index (n, m, glob_i, glob_j)] : 0;
-        }
-    }
-
-
-  loc_storage->state = SBC_STORAGE_INITIALIZED;
 }
 
 
@@ -360,6 +299,7 @@ void SBC_MPI_fill_in (
   int number_of_m_cols = loc_storage->number_of_m_cols;
   int has_s_col = loc_storage->has_s_col;
   double *loc_matrix = loc_storage->loc_matrix;
+  double *b = loc_storage->b;
 
   int nm = n * m;
   int ns = s * n;
@@ -395,7 +335,7 @@ void SBC_MPI_fill_in (
       dest = l % p;
       if (dest == 0)
           matrix_copy (to_send, to_recv, n, s); 
-      else
+      else if (s != 0)
         MPI_Send (to_send, ns, MPI_DOUBLE, dest, 0, comm);
       to_send += nm;
     }
@@ -409,6 +349,16 @@ void SBC_MPI_fill_in (
         }
       if (has_s_col)
         MPI_Recv (to_recv, ns, MPI_DOUBLE, 0, 0, comm, &st);
+    }
+
+  if (b)
+    {
+      for (int glob_i = 0; glob_i < n; glob_i ++)
+        {
+          b[glob_i] = 0;
+          for (int glob_j = 0; glob_j < n; glob_j ++)
+            b[glob_i] += (glob_j & 1) ? glob_matrix[_get_ij_index (n, m, glob_i, glob_j)] : 0;
+        }
     }
 
   loc_storage->state = SBC_STORAGE_INITIALIZED;
